@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手写工坊 · 本地版</title>
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--line:#e3e6ee;--ink:#1e2430;--sub:#6b7385;--acc:#3a6df5;--accd:#2f5cdb;--ok:#0d9b62;--err:#e04a4f}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:9}
+header h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px}
+.badge{font-size:11px;color:#fff;background:var(--ok);padding:2px 8px;border-radius:99px;font-weight:600}
+.sp{flex:1}
+.hstat{font-size:12px;color:var(--sub)}
+.wrap{max-width:1320px;margin:0 auto;padding:18px;display:grid;grid-template-columns:392px minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:980px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card>h2{font-size:12px;margin:0 0 12px;color:var(--sub);font-weight:650;letter-spacing:.6px;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--sub);margin:12px 0 5px;font-weight:500}
+select,input[type=number],textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;background:#fff;color:var(--ink);outline:none}
+select:focus,textarea:focus,input:focus{border-color:#a9bdf8;box-shadow:0 0 0 3px #e8eefe}
+textarea{resize:vertical;min-height:146px;line-height:1.72;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--acc);height:20px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.val{float:right;color:var(--acc);font-variant-numeric:tabular-nums;font-weight:600}
+button{cursor:pointer;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:600;transition:.15s}
+.primary{background:var(--acc);color:#fff;width:100%;margin-top:16px;padding:13px}
+.primary:hover{background:var(--accd)}
+.primary:disabled{background:#c2cdee;cursor:default}
+.ghost{background:#eaf0ff;color:var(--accd)}
+.ghost:hover{background:#dfe8ff}
+.tabs{display:flex;gap:4px;margin-bottom:6px;background:#eef0f5;padding:4px;border-radius:11px}
+.tabs button{flex:1;background:transparent;color:var(--sub);padding:8px;font-weight:600;border-radius:8px;font-size:13px}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(20,30,60,.1)}
+.engine{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.engine button{background:#eef0f5;color:var(--sub);padding:10px 8px;font-size:12.5px;line-height:1.35;border:1.5px solid transparent}
+.engine button b{display:block;font-size:13px;color:var(--ink);margin-bottom:2px}
+.engine button.on{background:#eef3ff;border-color:#b6c9fa}
+.engine button.on b{color:var(--accd)}
+.drop{border:1.5px dashed #cfd6e6;border-radius:11px;padding:26px 14px;text-align:center;color:var(--sub);font-size:13px;background:#fafbff;cursor:pointer}
+.drop:hover,.drop.hot{border-color:var(--acc);background:#f0f4ff}
+.preview{min-height:460px;display:flex;flex-direction:column}
+.pages{display:flex;flex-direction:column;gap:16px;align-items:center;max-height:80vh;overflow:auto;padding:4px}
+.pages img{width:100%;max-width:700px;border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 16px rgba(20,30,60,.08);background:#fff}
+.empty{margin:auto;color:#98a1b3;text-align:center;font-size:13px;padding:40px 20px;line-height:2}
+.bar{display:flex;gap:12px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.meta{color:var(--sub);font-size:12.5px}
+.spin{width:14px;height:14px;border:2px solid #ccd9f9;border-top-color:var(--acc);border-radius:50%;animation:s .75s linear infinite;display:inline-block;vertical-align:-2px;margin-right:5px}
+@keyframes s{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(10px);background:#202634;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.22s;z-index:99;max-width:80vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hint{font-size:11.5px;color:#98a1b3;margin-top:7px;line-height:1.6}
+.hidden{display:none!important}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;background:#eaf0ff;color:var(--accd);margin-left:6px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>手写工坊 · 本地版</h1>
+  <span class="badge">无水印 · 不限页</span>
+  <span class="sp"></span>
+  <span class="hstat" id="hstat">就绪</span>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>渲染引擎</h2>
+    <div class="engine">
+      <button class="on" data-be="cloud"><b>原站笔迹</b>真实手写AI字体</button>
+      <button data-be="local"><b>离线引擎</b>不联网·任选DPI</button>
+    </div>
+
+    <div class="tabs" style="margin-top:14px">
+      <button class="on" data-src="text">输入文字</button>
+      <button data-src="file">上传 Word</button>
+    </div>
+
+    <div id="paneText">
+      <textarea id="text" placeholder="在这里粘贴要转换成手写稿的文字，回车分段…"></textarea>
+    </div>
+    <div id="paneFile" class="hidden">
+      <div class="drop" id="drop">点击选择文件　或　拖到这里<br><span style="font-size:11.5px">支持 .docx / .txt / .md，≤40MB</span></div>
+      <input type="file" id="file" accept=".docx,.txt,.md" class="hidden">
+      <div class="hint" id="fileName"></div>
+    </div>
+
+    <label>字体 <span class="pill" id="fontPill"></span></label>
+    <select id="font"></select>
+
+    <label>纸张</label>
+    <select id="paper"></select>
+
+    <div class="row">
+      <div>
+        <label id="dpiLabel">清晰度</label>
+        <select id="dpi">
+          <option value="150">标准（约 150dpi）</option>
+          <option value="300" selected>高清（约 300dpi）</option>
+          <option value="450">超清（约 450dpi）</option>
+        </select>
+      </div>
+      <div>
+        <label>输出格式</label>
+        <select id="format">
+          <option value="pdf" selected>PDF</option>
+          <option value="png">PNG 压缩包</option>
+          <option value="jpg">JPG 压缩包</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="localOnly" class="hidden">
+      <label>每行字数 <span class="val" id="colsV">自动</span></label>
+      <input type="range" id="cols" min="0" max="56" value="0">
+      <label>行距倍率</label>
+      <input type="number" id="lineGap" value="1.62" step="0.02" min="1" max="3">
+    </div>
+
+    <label>凌乱度 <span class="val" id="messyV">3</span></label>
+    <input type="range" id="messy" min="0" max="10" value="3">
+
+    <label>单字随机度 <span class="val" id="randomV">3</span></label>
+    <input type="range" id="random" min="0" max="10" value="3">
+
+    <label>抄错字概率 <span class="val" id="mistakeV">0</span></label>
+    <input type="range" id="mistake" min="0" max="10" value="0">
+
+    <label>随机种子（0 = 每次都不一样）</label>
+    <input type="number" id="seed" value="0" min="0">
+
+    <button class="primary" id="go">生成手写稿</button>
+    <div class="bar" style="border:0;padding-top:8px;margin-top:0">
+      <span class="meta" id="status"></span>
+    </div>
+  </div>
+
+  <div class="card preview">
+    <h2>预览</h2>
+    <div class="pages" id="pages"><div class="empty">左侧输入文字或拖入 Word<br>点「生成手写稿」即可预览</div></div>
+    <div class="bar hidden" id="dlBar">
+      <button class="ghost" id="dl">下载成品</button>
+      <span class="meta" id="dlMeta"></span>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const toast = (m, ms = 2400) => {
+  const t = $('#toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms);
+};
+
+let OPT = {fonts:[],papers:[],site_fonts:[],site_papers:[]};
+let backend = 'cloud', srcMode = 'text', fileBlob = null, jobId = null;
+
+function fillSelect(el, items, def){
+  el.innerHTML = items.map(i=>`<option value="${i.key}">${i.name}</option>`).join('');
+  if(def) el.value = def;
+}
+
+function refreshOptions(){
+  if(backend === 'cloud'){
+    fillSelect($('#font'), OPT.site_fonts, '14');
+    fillSelect($('#paper'), OPT.site_papers, '1');
+    $('#localOnly').classList.add('hidden');
+    $('#dpiLabel').textContent = '清晰度（超分倍数）';
+    $('#dpi').innerHTML = `<option value="150">标准（原图）</option>
+      <option value="300" selected>高清（2× 超分）</option>
+      <option value="450">超清（3× 超分）</option>`;
+  }else{
+    fillSelect($('#font'), OPT.fonts, 'xingkai');
+    fillSelect($('#paper'), OPT.papers, 'a4p');
+    $('#localOnly').classList.remove('hidden');
+    $('#dpiLabel').textContent = '清晰度 DPI';
+    $('#dpi').innerHTML = `<option value="150">150（快速）</option>
+      <option value="300" selected>300（标准）</option>
+      <option value="600">600（高清打印）</option>`;
+  }
+  syncPill();
+}
+
+function syncPill(){
+  const sel = $('#font');
+  const n = sel.options[sel.selectedIndex]?.text || '';
+  $('#fontPill').textContent = n;
+}
+
+document.querySelectorAll('.engine button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.engine button').forEach(x=>x.classList.toggle('on', x===b));
+  backend = b.dataset.be;
+  refreshOptions();
+});
+
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on', x===b));
+  srcMode = b.dataset.src;
+  $('#paneText').classList.toggle('hidden', srcMode!=='text');
+  $('#paneFile').classList.toggle('hidden', srcMode!=='file');
+});
+
+$('#font').onchange = syncPill;
+$('#cols').oninput = () => $('#colsV').textContent = $('#cols').value === '0' ? '自动' : $('#cols').value;
+$('#messy').oninput = () => $('#messyV').textContent = $('#messy').value;
+$('#random').oninput = () => $('#randomV').textContent = $('#random').value;
+$('#mistake').oninput = () => $('#mistakeV').textContent = $('#mistake').value;
+
+$('#drop').onclick = () => $('#file').click();
+$('#drop').ondragover = e => { e.preventDefault(); $('#drop').classList.add('hot'); };
+$('#drop').ondragleave = () => $('#drop').classList.remove('hot');
+$('#drop').ondrop = e => {
+  e.preventDefault(); $('#drop').classList.remove('hot');
+  if(e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]);
+};
+$('#file').onchange = e => { if(e.target.files[0]) pick(e.target.files[0]); };
+
+function pick(f){
+  if(f.size > 40*1024*1024){ toast('文件超过 40MB'); return; }
+  fileBlob = f;
+  $('#fileName').textContent = `已选择：${f.name}（${(f.size/1024).toFixed(0)} KB）`;
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on', x.dataset.src==='file'));
+  srcMode = 'file';
+  $('#paneText').classList.add('hidden');
+  $('#paneFile').classList.remove('hidden');
+}
+
+$('#go').onclick = async () => {
+  const text = $('#text').value.trim();
+  if(srcMode==='text' && !text){ toast('请先输入文字'); return; }
+  if(srcMode==='file' && !fileBlob){ toast('请先选择文件'); return; }
+
+  $('#go').disabled = true;
+  $('#status').innerHTML = '<span class="spin"></span>渲染中…';
+  $('#hstat').textContent = '渲染中';
+  $('#pages').innerHTML = '<div class="empty"><span class="spin"></span><br>正在渲染，页数越多越久…</div>';
+  $('#dlBar').classList.add('hidden');
+
+  const fd = new FormData();
+  if(srcMode==='file' && fileBlob) fd.append('file', fileBlob);
+  else fd.append('text', text);
+  fd.append('backend', backend);
+  fd.append('rfont', $('#font').value);
+  fd.append('rpaper', $('#paper').value);
+  fd.append('font', $('#font').value);
+  fd.append('paper', $('#paper').value);
+  fd.append('dpi', $('#dpi').value);
+  fd.append('format', $('#format').value);
+  fd.append('cols', $('#cols').value);
+  fd.append('messy', $('#messy').value);
+  fd.append('random', $('#random').value);
+  fd.append('mistake', $('#mistake').value);
+  fd.append('line_gap', $('#lineGap').value);
+  fd.append('seed', $('#seed').value);
+
+  try{
+    const r = await fetch('/api/render', {method:'POST', body: fd});
+    const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    jobId = j.id;
+    poll();
+  }catch(e){
+    $('#status').textContent = '失败：' + e.message;
+    $('#hstat').textContent = '失败';
+    $('#pages').innerHTML = `<div class="empty">渲染失败<br>${e.message}</div>`;
+    $('#go').disabled = false;
+  }
+};
+
+async function poll(){
+  const t0 = Date.now();
+  while(true){
+    await new Promise(r => setTimeout(r, 800));
+    let j;
+    try{ j = await (await fetch('/api/status/' + jobId)).json(); }
+    catch(e){ continue; }
+
+    if(j.status === 'error'){
+      $('#status').textContent = '失败：' + j.error;
+      $('#hstat').textContent = '失败';
+      $('#pages').innerHTML = `<div class="empty">渲染失败<br>${j.error}</div>`;
+      $('#go').disabled = false;
+      return;
+    }
+    if(j.status === 'done'){
+      $('#go').disabled = false;
+      const mb = (j.size/1048576).toFixed(2);
+      $('#status').textContent = `完成 · ${j.pages} 页 · ${j.w}×${j.h}px · ${mb}MB · ${j.elapsed}s`;
+      $('#hstat').textContent = '完成';
+      $('#dlBar').classList.remove('hidden');
+      $('#dlMeta').textContent = `${j.pages} 页 · ${j.ext.toUpperCase()} · ${mb}MB`;
+      showPages(j.pages);
+      return;
+    }
+    $('#status').innerHTML = `<span class="spin"></span>渲染中… ${((Date.now()-t0)/1000).toFixed(0)}s`;
+    $('#hstat').textContent = '渲染中 ' + ((Date.now()-t0)/1000).toFixed(0) + 's';
+  }
+}
+
+function showPages(n){
+  let html = '';
+  for(let i=1;i<=n;i++){
+    html += `<img src="/api/preview/${jobId}/${i}?t=${Date.now()}" alt="第 ${i} 页" loading="lazy">`;
+  }
+  $('#pages').innerHTML = html || '<div class="empty">没有页面</div>';
+}
+
+$('#dl').onclick = () => { if(jobId) location.href = '/api/download/' + jobId; };
+
+(async function boot(){
+  try{
+    const r = await fetch('/api/options');
+    OPT = await r.json();
+    refreshOptions();
+  }catch(e){ toast('初始化失败：' + e.message); }
+})();
+</script>
+</body>
+</html>
